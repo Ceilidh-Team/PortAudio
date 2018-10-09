@@ -63,7 +63,15 @@ namespace ProjectCeilidh.PortAudio.Platform
         /// <param name="libraryName">The name of the library to load.</param>
         /// <param name="version">The version of the library to load. This should be as specific as possible.</param>
         /// <returns>A handle that can be used to refer to the native library.</returns>
-        public NativeLibraryHandle LoadNativeLibrary(string path, string libraryName, Version version) => GetNativeLibraryNames(libraryName, version).Select(x => LoadNativeLibrary(Path.Combine(path, x))).First(x => x != null);
+        public NativeLibraryHandle LoadNativeLibrary(string path, string libraryName, Version version)
+        {
+            var handle = GetNativeLibraryNames(libraryName, version).Select(x => LoadNativeLibrary(Path.Combine(path, x)))
+                .FirstOrDefault(x => x != null);
+            
+            if (handle == null) throw new DllNotFoundException($"Could not find library \"{libraryName}.{version.Major}.{version.Minor}.{version.Build}\"");
+
+            return handle;
+        }
 
         protected abstract string[] GetNativeLibraryNames(string libraryName, Version version);
         protected abstract NativeLibraryHandle LoadNativeLibrary(string libraryName);

@@ -1,6 +1,7 @@
 using System;
 using Xunit;
 using ProjectCeilidh.PortAudio.Native;
+using ProjectCeilidh.PortAudio.Wrapper;
 using static ProjectCeilidh.PortAudio.Native.PortAudio;
 
 namespace ProjectCeilidh.PortAudio.Tests
@@ -8,9 +9,12 @@ namespace ProjectCeilidh.PortAudio.Tests
     public class PortAudioTests
     {
         [Fact]
-        public void TestVersion()
+        public void TestInitialize()
         {
-            Assert.Equal(new Version(19, 6, 0), Pa_GetVersionInfo().Version);
+            using (PortAudioContext.EnterContext())
+            {
+                // Just make sure init and destroy works
+            }
         }
 
         [Fact]

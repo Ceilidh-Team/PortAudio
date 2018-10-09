@@ -17,8 +17,9 @@ namespace ProjectCeilidh.PortAudio.Native
     [return: MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(MarshalAsAsciiString))]
     internal delegate string PaGetVersionTextDelegate();
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate ref PaVersionInfo PaGetVersionInfoDelegate();
+    // Note: this function is not published in the shared objects by default, so I'm ignoring it.
+    /*[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate ref PaVersionInfo PaGetVersionInfoDelegate();*/
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(MarshalAsAsciiString))]
