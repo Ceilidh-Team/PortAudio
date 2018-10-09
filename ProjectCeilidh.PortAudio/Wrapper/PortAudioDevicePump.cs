@@ -22,9 +22,21 @@ namespace ProjectCeilidh.PortAudio.Wrapper
         private static readonly PaStreamFinishedCallback StreamFinishedCallback = OnStreamFinished;
         private static readonly PaStreamCallback StreamCallback = OnStreamData;
 
+        /// <summary>
+        /// The sample format the pump was opened with.
+        /// </summary>
         public PortAudioSampleFormat SampleFormat { get; }
+        /// <summary>
+        /// The number of channels the pump was opened with
+        /// </summary>
         public int Channels { get; }
+        /// <summary>
+        /// The sample rate the pump was opened with
+        /// </summary>
         public double SampleRate { get; }
+        /// <summary>
+        /// The suggested latency the pump was opened with
+        /// </summary>
         public TimeSpan SuggestedLatency { get; }
 
         private GCHandle _handle;
@@ -41,6 +53,17 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
         private readonly PaStream _stream;
 
+        /// <summary>
+        /// Create a PortAudioDevicePump for an output device
+        /// Note: This MUST be disposed, or you risk breaking audio on the host until the next reboot
+        /// </summary>
+        /// <param name="device">The output device to create a pump for</param>
+        /// <param name="channelCount">The number of channels in the input PCM data</param>
+        /// <param name="sampleFormat">The sample format of the input PCM data</param>
+        /// <param name="suggestedLatency">The latency the device will attempt to achieve</param>
+        /// <param name="sampleRate">The sample rate of playback</param>
+        /// <param name="callback">The callback that will supply data to the output device</param>
+        /// <exception cref="ArgumentNullException">Thrown in the case that the device or callback are null</exception>
         public unsafe PortAudioDevicePump(PortAudioDevice device, int channelCount, PortAudioSampleFormat sampleFormat,
             TimeSpan suggestedLatency, double sampleRate, ReadDataCallback callback)
         {
@@ -94,6 +117,17 @@ namespace ProjectCeilidh.PortAudio.Wrapper
             _dataThread.Start(this);
         }
 
+        /// <summary>
+        /// Create a PortAudioDevicePump for an input device
+        /// Note: This MUST be disposed, or you risk breaking audio on the host until the next reboot
+        /// </summary>
+        /// <param name="device">The input device to create a pump for</param>
+        /// <param name="channelCount">The number of channels to capture from the input device</param>
+        /// <param name="sampleFormat">The sample format of the output PCM data</param>
+        /// <param name="suggestedLatency">The latency the device will attempt to achieve</param>
+        /// <param name="sampleRate">The sample rate of the output PCM data</param>
+        /// <param name="callback">The callback that will be invoked when data is produced</param>
+        /// <exception cref="ArgumentNullException">Thrown in the case that the device or callback are null</exception>
         public unsafe PortAudioDevicePump(PortAudioDevice device, int channelCount, PortAudioSampleFormat sampleFormat,
             TimeSpan suggestedLatency, double sampleRate, WriteDataCallback callback)
         {
@@ -199,6 +233,9 @@ namespace ProjectCeilidh.PortAudio.Wrapper
             Start();
         }
 
+        /// <summary>
+        /// Emitted when the stream finishes processing. This is invoked when <see cref="Stop"/> or <see cref="Abort"/> are called.
+        /// </summary>
         public event StreamFinishedEventHandler StreamFinished;
 
         private int WriteAudioFrame(byte[] buffer, int count)
@@ -220,16 +257,15 @@ namespace ProjectCeilidh.PortAudio.Wrapper
         private void Dispose(bool disposing)
         {
             ReleaseUnmanagedResources();
-            if (disposing)
-            {
-                _requestThreadTermination.Set();
-                _dataThread.Join();
-                _queueCount?.Dispose();
-                _poolCount?.Dispose();
-                _requestThreadTermination?.Dispose();
+            if (!disposing) return;
+            
+            _requestThreadTermination.Set();
+            _dataThread.Join();
+            _queueCount?.Dispose();
+            _poolCount?.Dispose();
+            _requestThreadTermination?.Dispose();
 
-                if (_handle.IsAllocated) _handle.Free();
-            }
+            if (_handle.IsAllocated) _handle.Free();
         }
 
         public void Dispose()
