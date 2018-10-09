@@ -18,11 +18,13 @@ namespace ProjectCeilidh.PortAudio.Native
             LibraryHandle.GetSymbolDelegate<PaGetVersionDelegate>(nameof(Pa_GetVersion));
 
         
+        /*
         /// <summary>
         /// Retrieve version information for the currently running PortAudio build.
         /// </summary>
         public static readonly PaGetVersionInfoDelegate Pa_GetVersionInfo =
             LibraryHandle.GetSymbolDelegate<PaGetVersionInfoDelegate>(nameof(Pa_GetVersionInfo));
+            */
 
         /// <summary>
         /// Retrieve a textual description of the current PortAudio build, e.g. "PortAudio V19.5.0-devel, revision 1952M".

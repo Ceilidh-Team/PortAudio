@@ -15,7 +15,7 @@ namespace ProjectCeilidh.PortAudio.Platform
 
             if (addr == IntPtr.Zero)
             {
-                if (throwOnError) throw new EntryPointNotFoundException();
+                if (throwOnError) throw new EntryPointNotFoundException($"Could not find symbol \"{name}\"");
                 return default;
             }
 
@@ -34,7 +34,7 @@ namespace ProjectCeilidh.PortAudio.Platform
         {
             if (!_symbolTable.TryGetValue(name, out var addr)) _symbolTable[name] = addr = GetSymbolAddress(name);
 
-            if (addr == IntPtr.Zero) throw new EntryPointNotFoundException();
+            if (addr == IntPtr.Zero) throw new EntryPointNotFoundException($"Could not find symbol \"{name}\"");
 
             return ref Unsafe.AsRef<T>(addr.ToPointer());
         }

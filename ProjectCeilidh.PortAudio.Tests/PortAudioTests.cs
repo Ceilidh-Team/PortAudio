@@ -10,7 +10,7 @@ namespace ProjectCeilidh.PortAudio.Tests
         [Fact]
         public void TestVersion()
         {
-            Assert.Equal(new Version(19, 6, 0), Pa_GetVersionInfo().Version);
+            Assert.Equal(0x130600, Pa_GetVersion());
         }
 
         [Fact]
