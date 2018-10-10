@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace ProjectCeilidh.PortAudio.Platform
@@ -15,13 +14,13 @@ namespace ProjectCeilidh.PortAudio.Platform
 
             if (addr == IntPtr.Zero)
             {
-                if (throwOnError) throw new EntryPointNotFoundException($"Could not find symbol \"{name}\"");
+                if (throwOnError) throw new KeyNotFoundException($"Could not find symbol \"{name}\"");
                 return default;
             }
 
             try
             {
-                return Marshal.GetDelegateForFunctionPointer<T>(addr);
+                return (T) Marshal.GetDelegateForFunctionPointer(addr, typeof(T));
             }
             catch (MarshalDirectiveException)
             {
@@ -30,14 +29,15 @@ namespace ProjectCeilidh.PortAudio.Platform
             }
         }
 
-        public unsafe ref T GetSymbolReference<T>(string name) where T : struct 
+        // This here would work in cases where there are exported variables, but PortAudio doesn't use any.
+        /*public unsafe ref T GetSymbolReference<T>(string name) where T : struct 
         {
             if (!_symbolTable.TryGetValue(name, out var addr)) _symbolTable[name] = addr = GetSymbolAddress(name);
 
-            if (addr == IntPtr.Zero) throw new EntryPointNotFoundException($"Could not find symbol \"{name}\"");
+            if (addr == IntPtr.Zero) throw new KeyNotFoundException($"Could not find symbol \"{name}\"");
 
             return ref Unsafe.AsRef<T>(addr.ToPointer());
-        }
+        }*/
 
         protected abstract IntPtr GetSymbolAddress(string name);
 

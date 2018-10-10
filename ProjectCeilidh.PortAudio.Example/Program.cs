@@ -1,9 +1,7 @@
 ﻿using System;
-using ProjectCeilidh.PortAudio.Wrapper;
 
 namespace ProjectCeilidh.PortAudio.Example
 {
-
     public class Program
     {
         private static readonly PortAudioSampleFormat[] SampleFormats =
@@ -32,6 +30,28 @@ namespace ProjectCeilidh.PortAudio.Example
                             foreach (var format in SampleFormats)
                                 Console.WriteLine($"\t\tSupports {format}, {device.MaxOutputChannels}ch, {device.DefaultSampleRate/1000}KHz? {(device.SupportsFormat(format, 2, device.DefaultSampleRate, device.DefaultLowOutputLatency, true) ? "yes" : "no")}");
                         }
+
+                    /*if (api.HostApiType == PortAudioHostApiType.Mme)
+                    {
+                        using (var dev = api.DefaultOutputDevice)
+                        using (var file = File.OpenRead("BrownianNoise.raw"))
+                        {
+                            var a = file.Seek(4410000, SeekOrigin.Begin);
+
+                            using (var pump = new PortAudioDevicePump(dev, 2,
+                                new PortAudioSampleFormat(PortAudioSampleFormat.PortAudioNumberFormat.Signed, 2),
+                                dev.DefaultLowOutputLatency, 44100,
+                                (buffer, offset, count) => file.Read(buffer, offset, count)))
+                            using (var handle = new ManualResetEventSlim(false))
+                            {
+                                pump.StreamFinished += (sender, eventArgs) => handle.Set();
+
+                                pump.Start();
+
+                                handle.Wait();
+                            }
+                        }
+                    }*/
                 }
             }
         }

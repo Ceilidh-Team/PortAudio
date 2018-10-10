@@ -11,12 +11,10 @@ namespace ProjectCeilidh.PortAudio.Native
 
         public Version Version => new Version(VersionMajor, VersionMinor, VersionSubMinor);
 
-#pragma warning disable 649 // Disable unassigned field warning
         public int VersionMajor { get; }
         public int VersionMinor { get;  }
         public int VersionSubMinor { get; }
-        private readonly IntPtr _versionControlRevision;
-        private readonly IntPtr _versionText;
-#pragma warning restore 649 // Disable unassigned field warning
+        private IntPtr _versionControlRevision { get; }
+        private IntPtr _versionText { get; }
     }
 }

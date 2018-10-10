@@ -2,8 +2,8 @@
 
 namespace ProjectCeilidh.PortAudio.Native
 {
-    internal struct PaStream
+    internal readonly struct PaStream
     {
-        private readonly IntPtr _pointer;
+        private IntPtr _pointer { get; }
     }
 }

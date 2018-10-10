@@ -1,8 +1,7 @@
 ﻿using System;
 using ProjectCeilidh.PortAudio.Native;
-using static ProjectCeilidh.PortAudio.Native.PortAudio;
 
-namespace ProjectCeilidh.PortAudio.Wrapper
+namespace ProjectCeilidh.PortAudio
 {
     /// <summary>
     /// Represents a PortAudio multimedia device
@@ -50,7 +49,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
         internal PaDeviceIndex DeviceIndex { get; }
 
-        private ref PaDeviceInfo DeviceInfo => ref Pa_GetDeviceInfo(DeviceIndex);
+        private ref PaDeviceInfo DeviceInfo => ref Native.PortAudio.Pa_GetDeviceInfo(DeviceIndex);
 
         internal PortAudioDevice(PaDeviceIndex deviceIndex)
         {
@@ -87,7 +86,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
             else
                 inputParams = &param;
 
-            return Pa_IsFormatSupported(inputParams, outputParams, sampleRate) >= PaErrorCode.NoError;
+            return Native.PortAudio.Pa_IsFormatSupported(inputParams, outputParams, sampleRate) >= PaErrorCode.NoError;
         }
 
         private void ReleaseUnmanagedResources()

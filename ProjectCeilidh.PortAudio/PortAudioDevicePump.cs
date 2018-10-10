@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using ProjectCeilidh.PortAudio.Native;
-using static ProjectCeilidh.PortAudio.Native.PortAudio;
 
-namespace ProjectCeilidh.PortAudio.Wrapper
+namespace ProjectCeilidh.PortAudio
 {
     /// <summary>
     /// A PortAudio device stream driven by callbacks, rather than blocking read/write calls.
@@ -48,8 +49,10 @@ namespace ProjectCeilidh.PortAudio.Wrapper
         private SemaphoreSlim _poolCount;
         private readonly ConcurrentQueue<BufferContainer> _dataQueue;
         private readonly ConcurrentBag<BufferContainer> _bufferPool;
-        private Thread _dataThread;
-        private readonly ManualResetEventSlim _requestThreadTermination;
+        private CancellationTokenSource _processingThreadCancel;
+        private readonly ManualResetEventSlim _threadEndEvent;
+        // private Thread _dataThread;
+        // private readonly ManualResetEventSlim _requestThreadTermination;
 
         private readonly PaStream _stream;
 
@@ -90,11 +93,11 @@ namespace ProjectCeilidh.PortAudio.Wrapper
                 SuggestedLatency = new PaTime(suggestedLatency)
             };
 
-            var err = Pa_OpenStream(out _stream, null, &outputParams, sampleRate, FRAMES_TO_BUFFER, PaStreamFlags.NoFlag,
+            var err = Native.PortAudio.Pa_OpenStream(out _stream, null, &outputParams, sampleRate, FRAMES_TO_BUFFER, PaStreamFlags.NoFlag,
                 StreamCallback, GCHandle.ToIntPtr(_handle));
             if (err < PaErrorCode.NoError) throw PortAudioException.GetException(err);
 
-            err = Pa_SetStreamFinishedCallback(_stream, StreamFinishedCallback);
+            err = Native.PortAudio.Pa_SetStreamFinishedCallback(_stream, StreamFinishedCallback);
             if (err < PaErrorCode.NoError) throw PortAudioException.GetException(err);
 
             _dataQueue = new ConcurrentQueue<BufferContainer>();
@@ -112,9 +115,27 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
             _queueCount = new SemaphoreSlim(BUFFER_CHAIN_LENGTH);
             _poolCount = new SemaphoreSlim(0);
-            _requestThreadTermination = new ManualResetEventSlim(false);
-            _dataThread = new Thread(DataThread);
-            _dataThread.Start(this);
+            _threadEndEvent = new ManualResetEventSlim(false);
+            _processingThreadCancel = new CancellationTokenSource();
+
+            Task.Run(() => DataTask(_processingThreadCancel.Token));
+        }
+
+        private async Task DataTask(CancellationToken token)
+        {
+            while (await _poolCount.WaitAsyncCancellable(token))
+            {
+                BufferContainer result;
+                while (!_bufferPool.TryTake(out result)) { }
+
+                result.ReadLength = WriteAudioFrame(result.Buffer, result.ReadLength);
+                _dataQueue.Enqueue(result);
+                _queueCount.Release();
+            }
+
+            Debug.WriteLine("Data task is terminating...");
+
+            _threadEndEvent.Set();
         }
 
         /// <summary>
@@ -154,11 +175,11 @@ namespace ProjectCeilidh.PortAudio.Wrapper
                 SuggestedLatency = new PaTime(suggestedLatency)
             };
 
-            var err = Pa_OpenStream(out _stream, &inputParams, null, sampleRate, FRAMES_TO_BUFFER, PaStreamFlags.NoFlag,
+            var err = Native.PortAudio.Pa_OpenStream(out _stream, &inputParams, null, sampleRate, FRAMES_TO_BUFFER, PaStreamFlags.NoFlag,
                 StreamCallback, GCHandle.ToIntPtr(_handle));
             if (err < PaErrorCode.NoError) throw PortAudioException.GetException(err);
 
-            err = Pa_SetStreamFinishedCallback(_stream, StreamFinishedCallback);
+            err = Native.PortAudio.Pa_SetStreamFinishedCallback(_stream, StreamFinishedCallback);
             if (err < PaErrorCode.NoError) throw PortAudioException.GetException(err);
         }
 
@@ -167,7 +188,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
         /// </summary>
         public void Start()
         {
-            var err = Pa_StartStream(_stream);
+            var err = Native.PortAudio.Pa_StartStream(_stream);
             if (err < PaErrorCode.NoError) throw PortAudioException.GetException(err);
         }
 
@@ -176,7 +197,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
         /// </summary>
         public void Stop()
         {
-            var err = Pa_StopStream(_stream);
+            var err = Native.PortAudio.Pa_StopStream(_stream);
             if (err < PaErrorCode.NoError) throw PortAudioException.GetException(err);
         }
 
@@ -185,7 +206,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
         /// </summary>
         public void Abort()
         {
-            var err = Pa_AbortStream(_stream);
+            var err = Native.PortAudio.Pa_AbortStream(_stream);
             if (err < PaErrorCode.NoError) throw PortAudioException.GetException(err);
         }
 
@@ -194,11 +215,12 @@ namespace ProjectCeilidh.PortAudio.Wrapper
         /// </summary>
         public void ClearBuffers()
         {
-            if (Pa_IsStreamActive(_stream) != PaErrorCode.NoError) throw new InvalidOperationException();
+            if (Native.PortAudio.Pa_IsStreamActive(_stream) != PaErrorCode.NoError) throw new InvalidOperationException();
 
-            _requestThreadTermination.Set();
-            _dataThread.Join();
-            _requestThreadTermination.Reset();
+            _processingThreadCancel.Cancel();
+            _threadEndEvent.Wait();
+            _threadEndEvent.Reset();
+            _processingThreadCancel.Dispose();
             _poolCount.Dispose();
             _queueCount.Dispose();
 
@@ -227,8 +249,9 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
             _queueCount = new SemaphoreSlim(BUFFER_CHAIN_LENGTH);
             _poolCount = new SemaphoreSlim(0);
-            _dataThread = new Thread(DataThread);
-            _dataThread.Start(this);
+            _processingThreadCancel = new CancellationTokenSource();
+
+            Task.Run(() => DataTask(_processingThreadCancel.Token));
 
             Start();
         }
@@ -250,7 +273,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
         private void ReleaseUnmanagedResources()
         {
-            Pa_CloseStream(_stream);
+            Native.PortAudio.Pa_CloseStream(_stream);
             PortAudioLifetimeRegistry.UnRegister(this);
         }
 
@@ -258,12 +281,13 @@ namespace ProjectCeilidh.PortAudio.Wrapper
         {
             ReleaseUnmanagedResources();
             if (!disposing) return;
-            
-            _requestThreadTermination.Set();
-            _dataThread.Join();
+
+            _processingThreadCancel.Cancel();
+            _threadEndEvent.Wait();
+            _threadEndEvent.Dispose();
+            _processingThreadCancel.Dispose();
             _queueCount?.Dispose();
             _poolCount?.Dispose();
-            _requestThreadTermination?.Dispose();
 
             if (_handle.IsAllocated) _handle.Free();
         }
@@ -277,23 +301,6 @@ namespace ProjectCeilidh.PortAudio.Wrapper
         ~PortAudioDevicePump()
         {
             Dispose(false);
-        }
-
-        private static void DataThread(object ctx)
-        {
-            if (!(ctx is PortAudioDevicePump pump)) return;
-
-            while (!pump._requestThreadTermination.Wait(0))
-            {
-                if (!pump._poolCount.Wait(10)) continue;
-
-                BufferContainer result;
-                while (!pump._bufferPool.TryTake(out result)) { }
-
-                result.ReadLength = pump.WriteAudioFrame(result.Buffer, result.ReadLength);
-                pump._dataQueue.Enqueue(result);
-                pump._queueCount.Release();
-            }
         }
 
         private static void OnStreamFinished(IntPtr userData)
@@ -320,17 +327,15 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
                 var audioBufLen = (long) frameCount * pump.Channels * pump.SampleFormat.FormatSize;
 
-                fixed (byte* source = result.Buffer)
-                {
-                    Buffer.MemoryCopy(source, output.ToPointer(),
-                        (long) frameCount * pump.Channels * pump.SampleFormat.FormatSize, result.ReadLength);
+                Marshal.Copy(result.Buffer, 0, output, Math.Min(result.ReadLength, (int)frameCount * pump.Channels * pump.SampleFormat.FormatSize));
 
-                    if (result.ReadLength < audioBufLen)
-                    {
-                        var audioBufPtr = (byte*) (output + result.ReadLength);
-                        for (var i = 0; i < audioBufLen - result.ReadLength; i++)
-                            audioBufPtr[i] = 0;
-                    }
+                if (result.ReadLength < audioBufLen)
+                {
+                    var audioBufPtr = (byte*) (output + result.ReadLength);
+                    if (audioBufPtr == null) return PaStreamCallbackResult.Abort; // This should never happen
+
+                    for (var i = 0; i < audioBufLen - result.ReadLength; i++)
+                        audioBufPtr[i] = 0;
                 }
 
                 var res = result.ReadLength <= 0 ? PaStreamCallbackResult.Complete : PaStreamCallbackResult.Continue;
@@ -340,6 +345,8 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
                 if (statusFlags.HasFlag(PaStreamCallbackFlags.OutputUnderflow)) // The ammount of buffering is too little for this stream, increase the buffer count
                 {
+                    Debug.WriteLine("Output underflow, increasing the buffer chain length");
+
                     pump._bufferPool.Add(new BufferContainer(new byte[FRAMES_TO_BUFFER * (ulong)pump.Channels * (ulong)pump.SampleFormat.FormatSize]));
                     pump._poolCount.Release();
                 }
@@ -349,8 +356,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
             var buf = new byte[frameCount * (ulong)pump.SampleFormat.FormatSize * (ulong)pump.Channels];
 
-            fixed (byte* ptr = buf)
-                Buffer.MemoryCopy(input.ToPointer(), ptr, buf.Length, buf.Length);
+            Marshal.Copy(input, buf, 0, buf.Length);
 
             pump._writeDataCallback(buf, 0, buf.Length);
 

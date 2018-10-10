@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using ProjectCeilidh.PortAudio.Native;
-using static ProjectCeilidh.PortAudio.Native.PortAudio;
 
-namespace ProjectCeilidh.PortAudio.Wrapper
+namespace ProjectCeilidh.PortAudio
 {
     public class PortAudioHostApi : IDisposable
     {
@@ -17,7 +16,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
             {
                 using (PortAudioContext.EnterContext())
                 {
-                    var count = Pa_GetHostApiCount();
+                    var count = Native.PortAudio.Pa_GetHostApiCount();
 
                     for (PaHostApiIndex i = default; i < count; i++)
                         yield return PortAudioInstanceCache.GetHostApi(i);
@@ -40,7 +39,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
             {
                 for (var i = 0; i < ApiInfo.DeviceCount; i++)
                 {
-                    var deviceIndex = Pa_HostApiDeviceIndexToDeviceIndex(_apiIndex, i);
+                    var deviceIndex = Native.PortAudio.Pa_HostApiDeviceIndexToDeviceIndex(_apiIndex, i);
                     if (deviceIndex.TryGetErrorCode(out var err)) throw PortAudioException.GetException(err);
                     yield return PortAudioInstanceCache.GetPortAudioDevice(deviceIndex);
                 }
@@ -62,7 +61,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
         /// </summary>
         public PortAudioHostApiType HostApiType => (PortAudioHostApiType) ApiInfo.Type;
 
-        private ref PaHostApiInfo ApiInfo => ref Pa_GetHostApiInfo(_apiIndex);
+        private ref PaHostApiInfo ApiInfo => ref Native.PortAudio.Pa_GetHostApiInfo(_apiIndex);
         private readonly PaHostApiIndex _apiIndex;
 
         internal PortAudioHostApi(PaHostApiIndex index)

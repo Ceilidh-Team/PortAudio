@@ -1,7 +1,6 @@
 using System;
 using Xunit;
 using ProjectCeilidh.PortAudio.Native;
-using ProjectCeilidh.PortAudio.Wrapper;
 using static ProjectCeilidh.PortAudio.Native.PortAudio;
 
 namespace ProjectCeilidh.PortAudio.Tests
@@ -21,7 +20,7 @@ namespace ProjectCeilidh.PortAudio.Tests
         public void TestErrorText()
         {
             foreach (PaErrorCode code in Enum.GetValues(typeof(PaErrorCode)))
-                Assert.NotNull(Pa_GetErrorText(code));
+                Assert.NotEqual(IntPtr.Zero, Pa_GetErrorText(code));
         }
     }
 }

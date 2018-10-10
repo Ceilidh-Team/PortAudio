@@ -2,7 +2,6 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace ProjectCeilidh.PortAudio.Platform
 {
