@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using ProjectCeilidh.PortAudio.Native;
 
@@ -32,6 +31,8 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
                 if (RegisteredHandles.Count != 0) return;
 
+                PortAudioInstanceCache.ClearCache();
+                
                 var err = Native.PortAudio.Pa_Terminate();
                 if (err < PaErrorCode.NoError) throw PortAudioException.GetException(err);
             }

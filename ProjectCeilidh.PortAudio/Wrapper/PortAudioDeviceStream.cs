@@ -14,9 +14,21 @@ namespace ProjectCeilidh.PortAudio.Wrapper
     {
         private static readonly PaStreamFinishedCallback StreamFinishedCallback = OnStreamFinished;
 
+        /// <summary>
+        /// The sample format the stream was opened with
+        /// </summary>
         public PortAudioSampleFormat SampleFormat { get; }
+        /// <summary>
+        /// The number of channels the stream was opened with
+        /// </summary>
         public int Channels { get; }
+        /// <summary>
+        /// The sample rate the stream was opened with
+        /// </summary>
         public double SampleRate { get; }
+        /// <summary>
+        /// The suggested latency the stream was opened with
+        /// </summary>
         public TimeSpan SuggestedLatency { get; }
 
         public override bool CanRead { get; }
@@ -28,6 +40,17 @@ namespace ProjectCeilidh.PortAudio.Wrapper
         private GCHandle _handle;
         private readonly PaStream _stream;
 
+        /// <summary>
+        /// Create a stream for a given audio device
+        /// Note: This MUST be disposed, or you risk breaking audio on the host until the next reboot
+        /// </summary>
+        /// <param name="device">The audio device to open the stream against</param>
+        /// <param name="asOutput">If true, open the stream as an ouput stream</param>
+        /// <param name="channelCount">The number of channels in the input/output PCM data</param>
+        /// <param name="sampleFormat">The sample format of the input/output PCM data</param>
+        /// <param name="suggestedLatency">The suggested latency the output device will attempt to reach</param>
+        /// <param name="sampleRate">The sample rate of the input/output PCM data</param>
+        /// <exception cref="ArgumentNullException">Thrown if the device is null</exception>
         public PortAudioDeviceStream(PortAudioDevice device, bool asOutput, int channelCount, PortAudioSampleFormat sampleFormat, TimeSpan suggestedLatency, double sampleRate)
         {
             if (device == null) throw new ArgumentNullException(nameof(device));
