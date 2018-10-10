@@ -1,4 +1,4 @@
-namespace ProjectCeilidh.PortAudio.Wrapper
+namespace ProjectCeilidh.PortAudio
 {
     /// <summary>
     /// The type of host API

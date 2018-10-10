@@ -1,10 +1,8 @@
 ﻿using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using ProjectCeilidh.PortAudio.Native;
-using static ProjectCeilidh.PortAudio.Native.PortAudio;
 
-namespace ProjectCeilidh.PortAudio.Wrapper
+namespace ProjectCeilidh.PortAudio
 {
     public sealed class PortAudioException : Exception
     {
@@ -15,7 +13,8 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
         internal static Exception GetException(PaErrorCode error)
         {
-            var errorText = Pa_GetErrorText(error);
+            var errorPtr = Native.PortAudio.Pa_GetErrorText(error);
+            var errorText = Marshal.PtrToStringAnsi(errorPtr);
 
             switch (error)
             {
@@ -23,8 +22,6 @@ namespace ProjectCeilidh.PortAudio.Wrapper
                     throw new ArgumentOutOfRangeException();
                 case PaErrorCode.InsufficientMemory:
                     return new OutOfMemoryException(errorText);
-                case PaErrorCode.InputOverflowed:
-                    return new InternalBufferOverflowException(errorText);
                 case PaErrorCode.CanNotReadFromAnOutputOnlyStream:
                 case PaErrorCode.CanNotReadFromACallbackStream:
                 case PaErrorCode.CanNotWriteToAnInputOnlyStream:
@@ -40,7 +37,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
                 case PaErrorCode.IncompatibleStreamHostApi:
                     return new ArgumentException(errorText);
                 case PaErrorCode.UnanticipatedHostError when !RuntimeInformation.IsOSPlatform(OSPlatform.Windows):
-                    return new PortAudioException(Pa_GetLastHostErrorInfo().ErrorText);
+                    return new PortAudioException(Native.PortAudio.Pa_GetLastHostErrorInfo().ErrorText);
                 default:
                     return new PortAudioException(errorText);
             }

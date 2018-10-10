@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ProjectCeilidh.PortAudio.Wrapper
+namespace ProjectCeilidh.PortAudio
 {
     /// <summary>
     /// Used to wrap a set of calls to the PortAudio API that require initialization.

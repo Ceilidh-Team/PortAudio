@@ -2,9 +2,8 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using ProjectCeilidh.PortAudio.Native;
-using static ProjectCeilidh.PortAudio.Native.PortAudio;
 
-namespace ProjectCeilidh.PortAudio.Wrapper
+namespace ProjectCeilidh.PortAudio
 {
     /// <summary>
     /// A PortAudio device stream driven by blocking read/write calls, rather than callbacks.
@@ -84,13 +83,13 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
             _handle = GCHandle.Alloc(this);
 
-            var err = Pa_OpenStream(out _stream, inputParams, outputParams, sampleRate, 512, PaStreamFlags.NoFlag, null, GCHandle.ToIntPtr(_handle));
+            var err = Native.PortAudio.Pa_OpenStream(out _stream, inputParams, outputParams, sampleRate, 512, PaStreamFlags.NoFlag, null, GCHandle.ToIntPtr(_handle));
             if (err < PaErrorCode.NoError) throw PortAudioException.GetException(err);
 
-            err = Pa_SetStreamFinishedCallback(_stream, StreamFinishedCallback);
+            err = Native.PortAudio.Pa_SetStreamFinishedCallback(_stream, StreamFinishedCallback);
             if (err < PaErrorCode.NoError) throw PortAudioException.GetException(err);
 
-            err = Pa_StartStream(_stream);
+            err = Native.PortAudio.Pa_StartStream(_stream);
             if (err < PaErrorCode.NoError) throw PortAudioException.GetException(err);
         }
 
@@ -102,7 +101,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
             fixed (byte* ptr = &buffer[offset])
             {
-                var err = Pa_ReadStream(_stream, new IntPtr(ptr), (ulong) (count / Channels / SampleFormat.FormatSize));
+                var err = Native.PortAudio.Pa_ReadStream(_stream, new IntPtr(ptr), (ulong) (count / Channels / SampleFormat.FormatSize));
                 if (err == PaErrorCode.NoError)
                     return count / Channels / SampleFormat.FormatSize;
 
@@ -120,7 +119,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
             fixed (byte* ptr = &buffer[offset])
             {
-                var err = Pa_WriteStream(_stream, new IntPtr(ptr), (ulong) (count / Channels / SampleFormat.FormatSize));
+                var err = Native.PortAudio.Pa_WriteStream(_stream, new IntPtr(ptr), (ulong) (count / Channels / SampleFormat.FormatSize));
                 if (err != PaErrorCode.NoError) throw PortAudioException.GetException(err);
             }
         }
@@ -132,7 +131,7 @@ namespace ProjectCeilidh.PortAudio.Wrapper
 
         private void ReleaseUnmanagedResources()
         {
-            var err = Pa_CloseStream(_stream);
+            var err = Native.PortAudio.Pa_CloseStream(_stream);
 
             PortAudioLifetimeRegistry.UnRegister(this);
 

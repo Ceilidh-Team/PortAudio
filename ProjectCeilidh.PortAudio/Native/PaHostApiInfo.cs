@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+#pragma warning disable 649
 
 namespace ProjectCeilidh.PortAudio.Native
 {

@@ -9,4 +9,10 @@
     <ProjectReference Include="..\ProjectCeilidh.PortAudio\ProjectCeilidh.PortAudio.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="BrownianNoise.raw">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

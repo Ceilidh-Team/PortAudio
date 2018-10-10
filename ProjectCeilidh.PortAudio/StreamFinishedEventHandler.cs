@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ProjectCeilidh.PortAudio.Wrapper
+namespace ProjectCeilidh.PortAudio
 {
     public delegate void StreamFinishedEventHandler(object sender, EventArgs e);
 }

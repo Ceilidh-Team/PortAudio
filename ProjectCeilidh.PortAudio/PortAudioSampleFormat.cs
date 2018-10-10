@@ -1,7 +1,7 @@
 ﻿using System;
 using ProjectCeilidh.PortAudio.Native;
 
-namespace ProjectCeilidh.PortAudio.Wrapper
+namespace ProjectCeilidh.PortAudio
 {
     public struct PortAudioSampleFormat
     {
