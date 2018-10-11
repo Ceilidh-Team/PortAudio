@@ -2,7 +2,7 @@
 
 namespace ProjectCeilidh.PortAudio.Native
 {
-    internal readonly struct PaDeviceIndex : IComparable<PaDeviceIndex>
+    internal readonly struct PaDeviceIndex : IComparable<PaDeviceIndex>, IEquatable<PaDeviceIndex>
     {
         private readonly int _value;
 
