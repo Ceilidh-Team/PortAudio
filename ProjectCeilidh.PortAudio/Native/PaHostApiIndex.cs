@@ -5,7 +5,7 @@ namespace ProjectCeilidh.PortAudio.Native
     /// <summary>
     /// Used to enumerate host APIs at runtime. Values of this type range from 0 to (<see cref="PortAudio.Pa_GetHostApiCount"/>-1).
     /// </summary>
-    internal readonly struct PaHostApiIndex : IComparable<PaHostApiIndex>
+    internal readonly struct PaHostApiIndex : IComparable<PaHostApiIndex>, IEquatable<PaHostApiIndex>
     {
         private readonly int _value;
 
